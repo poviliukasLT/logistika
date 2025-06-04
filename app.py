@@ -9,8 +9,8 @@ uploaded_file1 = st.file_uploader("Įkelk Venipak .xlsx failą", type=["xlsx"])
 uploaded_file2 = st.file_uploader("Įkelk Rivile .xlsx failą", type=["xlsx"])
 
 if uploaded_file1 and uploaded_file2:
-    df1 = pd.read_excel(uploaded_file1)
-    df2 = pd.read_excel(uploaded_file2)
+    df1 = pd.read_excel(uploaded_file1, engine="openpyxl")
+    df2 = pd.read_excel(uploaded_file2, engine="openpyxl")
 
     # Pirmas failas: paimame reikiamus stulpelius
     df1_subset = df1[["Kl.Siuntos Nr.", "Kaina, EUR", "Gavėjas"]].copy()
@@ -35,6 +35,9 @@ if uploaded_file1 and uploaded_file2:
         "Pardavimas Be PVM"
     ]]
 
+    # Pašaliname eilutes, kuriose yra bent vienas tuščias langelis
+    df_final = df_final.dropna(how="any")
+
     # Eksportas
     def convert_df(df):
         output = BytesIO()
@@ -42,7 +45,7 @@ if uploaded_file1 and uploaded_file2:
             df.to_excel(writer, index=False, sheet_name='Sujungti Duomenys')
         return output.getvalue()
 
-    st.success("Duomenys sėkmingai sujungti!")
+    st.success("Duomenys sėkmingai sujungti ir išfiltruoti!")
     st.dataframe(df_final)
 
     st.download_button(
