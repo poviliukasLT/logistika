@@ -85,7 +85,7 @@ if uploaded_file1 and uploaded_file2:
     st.dataframe(df_final)
 
     st.download_button(
-        label="📥 Atsisiųsti rezultatą su suvestine (.xlsx)",
+        label="📥 Atsisiųsti rezultatą (.xlsx)",
         data=convert_df_with_summary(df_final, summary),
         file_name="Rezultatas.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
