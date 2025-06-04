@@ -1,29 +1,29 @@
-
 import streamlit as st
 import pandas as pd
 from io import BytesIO
 
 st.title("Excel Failų Sujungimas ir Apskaičiavimas")
 
-uploaded_file1 = st.file_uploader("Įkelk Venipak .xlsx failą", type=["xlsx"])
-uploaded_file2 = st.file_uploader("Įkelk Rivile .xlsx failą", type=["xlsx"])
+uploaded_file1 = st.file_uploader("Įkelk VENIPAK .xlsx failą", type=["xlsx"])
+uploaded_file2 = st.file_uploader("Įkelk RIVILE .xlsx failą", type=["xlsx"])
 
 if uploaded_file1 and uploaded_file2:
+    # Įkeliame abu failus
     df1 = pd.read_excel(uploaded_file1, engine="openpyxl")
     df2 = pd.read_excel(uploaded_file2, engine="openpyxl")
 
-    # Pirmas failas: paimame reikiamus stulpelius
+    # Iš pirmo failo paimame reikiamus stulpelius
     df1_subset = df1[["Kl.Siuntos Nr.", "Kaina, EUR", "Gavėjas"]].copy()
     df1_subset["Kaina, EUR su priemoka"] = df1_subset["Kaina, EUR"] * 1.3
 
-    # Antras failas: paimame reikiamus stulpelius
+    # Iš antro failo paimame reikiamus stulpelius
     df2_subset = df2[["Dokumento Nr.", "Menedžeris", "Suma Be PVM"]].copy()
     df2_subset = df2_subset.rename(columns={
         "Dokumento Nr.": "Kl.Siuntos Nr.",
         "Suma Be PVM": "Pardavimas Be PVM"
     })
 
-    # Sujungiame per "Kl.Siuntos Nr."
+    # Sujungiame pagal "Kl.Siuntos Nr."
     df_merged = pd.merge(df1_subset, df2_subset, on="Kl.Siuntos Nr.", how="left")
 
     # Galutinė stulpelių tvarka
@@ -35,17 +35,28 @@ if uploaded_file1 and uploaded_file2:
         "Pardavimas Be PVM"
     ]]
 
-    # Pašaliname eilutes, kuriose yra bent vienas tuščias langelis
-    df_final = df_final.dropna(how="any")
+    # Pašaliname eilutes, kuriose bent vienas reikalingas stulpelis yra NaN arba tuščias
+    required_cols = [
+        "Kl.Siuntos Nr.",
+        "Kaina, EUR su priemoka",
+        "Gavėjas",
+        "Menedžeris",
+        "Pardavimas Be PVM"
+    ]
 
-    # Eksportas
+    df_final = df_final.dropna(subset=required_cols)
+    df_final = df_final[
+        df_final[required_cols].applymap(lambda x: str(x).strip() != "").all(axis=1)
+    ]
+
+    # Funkcija failui sukurti
     def convert_df(df):
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df.to_excel(writer, index=False, sheet_name='Sujungti Duomenys')
         return output.getvalue()
 
-    st.success("Duomenys sėkmingai sujungti ir išfiltruoti!")
+    st.success("✅ Duomenys sėkmingai apdoroti ir išfiltruoti!")
     st.dataframe(df_final)
 
     st.download_button(
