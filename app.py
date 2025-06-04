@@ -5,8 +5,8 @@ from io import BytesIO
 
 st.title("Excel Failų Sujungimas ir Apskaičiavimas")
 
-uploaded_file1 = st.file_uploader("Įkelk pirmą .xlsx failą", type=["xlsx"])
-uploaded_file2 = st.file_uploader("Įkelk antrą .xlsx failą", type=["xlsx"])
+uploaded_file1 = st.file_uploader("Įkelk Venipak .xlsx failą", type=["xlsx"])
+uploaded_file2 = st.file_uploader("Įkelk Rivile .xlsx failą", type=["xlsx"])
 
 if uploaded_file1 and uploaded_file2:
     df1 = pd.read_excel(uploaded_file1)
