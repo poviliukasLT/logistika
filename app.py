@@ -87,6 +87,6 @@ if uploaded_file1 and uploaded_file2:
     st.download_button(
         label="📥 Atsisiųsti rezultatą su suvestine (.xlsx)",
         data=convert_df_with_summary(df_final, summary),
-        file_name="sujungtas_rezultatas_su_suvestine.xlsx",
+        file_name="Rezultatas.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
