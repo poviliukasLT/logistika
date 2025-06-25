@@ -43,8 +43,18 @@ if uploaded_file1 and uploaded_file2:
         df_final[required_cols].applymap(lambda x: str(x).strip() != "").all(axis=1)
     ]
 
-    # Suvestinė
-    summary = df_final.groupby("Menedžeris").agg({
+    # Grupavimas pagal siuntos numerį
+    agg_funcs = {
+        "Kaina, EUR su priemoka": "sum",
+        "Gavėjas": "first",
+        "Menedžeris": "first",
+        "Pardavimas Be PVM": "first"
+    }
+
+    df_grouped = df_final.groupby("Kl.Siuntos Nr.").agg(agg_funcs).reset_index()
+
+    # Suvestinė pagal menedžerį
+    summary = df_grouped.groupby("Menedžeris").agg({
         "Pardavimas Be PVM": "sum",
         "Kaina, EUR su priemoka": "sum"
     }).reset_index()
@@ -68,11 +78,9 @@ if uploaded_file1 and uploaded_file2:
             workbook = writer.book
             worksheet = writer.sheets['Sujungti Duomenys']
 
-            # Formatai
             percent_format = workbook.add_format({'num_format': '0.00%'})
             number_format = workbook.add_format({'num_format': '0.00'})
 
-            # Stulpelių formatavimas
             col_map = {col: startcol + i for i, col in enumerate(df_summary.columns)}
 
             worksheet.set_column(col_map["Pardavimas Be PVM (suma)"], col_map["Pardavimas Be PVM (suma)"], 18, number_format)
@@ -82,11 +90,11 @@ if uploaded_file1 and uploaded_file2:
         return output.getvalue()
 
     st.success("✅ Duomenys apdoroti ir paruošti eksportui!")
-    st.dataframe(df_final)
+    st.dataframe(df_grouped)
 
     st.download_button(
         label="📥 Atsisiųsti rezultatą (.xlsx)",
-        data=convert_df_with_summary(df_final, summary),
+        data=convert_df_with_summary(df_grouped, summary),
         file_name="Rezultatas.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
