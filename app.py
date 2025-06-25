@@ -53,12 +53,12 @@ if uploaded_file1 and uploaded_file2:
 
     df_grouped = df_clean.groupby("Kl.Siuntos Nr.").agg(agg_funcs).reset_index()
 
-    # Skaitinis stulpelis eksportui (naudojamas Excel formatavimui)
+    # Logistika % skaitine forma (naudojama eksportui ir formatavimui)
     df_grouped["Logistika % (sk.)"] = (
         df_grouped["Kaina, EUR su priemoka"] / df_grouped["Pardavimas Be PVM"]
     )
 
-    # Tekstinis stulpelis rodyti Streamlit
+    # Vizualiai rodome kaip tekstą su procentu Streamlit'e
     df_grouped["Logistika %"] = df_grouped["Logistika % (sk.)"].map(lambda x: f"{x*100:.2f}%")
 
     # Suvestinė pagal menedžerį
@@ -79,10 +79,11 @@ if uploaded_file1 and uploaded_file2:
     def convert_df_with_summary(df_main, df_summary):
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            # Pašaliname tekstinį stulpelį, bet paliekame skaitinį
+            # Eksportui: tekstinį stulpelį pašaliname, paliekame skaitinį
             df_export = df_main.drop(columns=["Logistika %"])
-            df_export.to_excel(writer, index=False, sheet_name='Sujungti Duomenys', startrow=0)
+            df_export = df_export.rename(columns={"Logistika % (sk.)": "Logistika %"})
 
+            df_export.to_excel(writer, index=False, sheet_name='Sujungti Duomenys', startrow=0)
             startcol = 8
             df_summary.to_excel(writer, index=False, sheet_name='Sujungti Duomenys', startcol=startcol, startrow=0)
 
@@ -98,9 +99,9 @@ if uploaded_file1 and uploaded_file2:
             worksheet.set_column(col_map["Logistikos išlaidos"], col_map["Logistikos išlaidos"], 18, number_format)
             worksheet.set_column(col_map["Logistika %"], col_map["Logistika %"], 12, percent_format)
 
-            # Sąlyginis formatavimas: F stulpelyje (5 index) > 5%
+            # Sąlyginis formatavimas: raudonas tekstas, jei > 5%
             red_format = workbook.add_format({'font_color': 'red'})
-            row_count = len(df_main)
+            row_count = len(df_export)
             worksheet.conditional_format(1, 5, row_count, 5, {
                 'type': 'cell',
                 'criteria': '>',
