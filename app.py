@@ -53,6 +53,11 @@ if uploaded_file1 and uploaded_file2:
 
     df_grouped = df_clean.groupby("Kl.Siuntos Nr.").agg(agg_funcs).reset_index()
 
+    # Logistika % (procentais kaip tekstas)
+    df_grouped["Logistika %"] = (
+        df_grouped["Kaina, EUR su priemoka"] / df_grouped["Pardavimas Be PVM"] * 100
+    ).map("{:.2f}%".format)
+
     # Suvestinė pagal menedžerį
     summary = df_grouped.groupby("Menedžeris").agg({
         "Pardavimas Be PVM": "sum",
@@ -72,7 +77,7 @@ if uploaded_file1 and uploaded_file2:
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_main.to_excel(writer, index=False, sheet_name='Sujungti Duomenys', startrow=0)
-            startcol = 7
+            startcol = 8
             df_summary.to_excel(writer, index=False, sheet_name='Sujungti Duomenys', startcol=startcol, startrow=0)
 
             workbook = writer.book
