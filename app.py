@@ -53,10 +53,13 @@ if uploaded_file1 and uploaded_file2:
 
     df_grouped = df_clean.groupby("Kl.Siuntos Nr.").agg(agg_funcs).reset_index()
 
-    # Logistika % (procentais kaip tekstas)
-    df_grouped["Logistika %"] = (
-        df_grouped["Kaina, EUR su priemoka"] / df_grouped["Pardavimas Be PVM"] * 100
-    ).map("{:.2f}%".format)
+    # Skaitinis stulpelis eksportui (naudojamas Excel formatavimui)
+    df_grouped["Logistika % (sk.)"] = (
+        df_grouped["Kaina, EUR su priemoka"] / df_grouped["Pardavimas Be PVM"]
+    )
+
+    # Tekstinis stulpelis rodyti Streamlit
+    df_grouped["Logistika %"] = df_grouped["Logistika % (sk.)"].map(lambda x: f"{x*100:.2f}%")
 
     # Suvestinė pagal menedžerį
     summary = df_grouped.groupby("Menedžeris").agg({
@@ -76,7 +79,10 @@ if uploaded_file1 and uploaded_file2:
     def convert_df_with_summary(df_main, df_summary):
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df_main.to_excel(writer, index=False, sheet_name='Sujungti Duomenys', startrow=0)
+            # Pašaliname tekstinį stulpelį, bet paliekame skaitinį
+            df_export = df_main.drop(columns=["Logistika %"])
+            df_export.to_excel(writer, index=False, sheet_name='Sujungti Duomenys', startrow=0)
+
             startcol = 8
             df_summary.to_excel(writer, index=False, sheet_name='Sujungti Duomenys', startcol=startcol, startrow=0)
 
@@ -92,7 +98,7 @@ if uploaded_file1 and uploaded_file2:
             worksheet.set_column(col_map["Logistikos išlaidos"], col_map["Logistikos išlaidos"], 18, number_format)
             worksheet.set_column(col_map["Logistika %"], col_map["Logistika %"], 12, percent_format)
 
-            # Sąlyginis formatavimas: F stulpelis (index 5) su >5% paryškinimu
+            # Sąlyginis formatavimas: F stulpelyje (5 index) > 5%
             red_format = workbook.add_format({'font_color': 'red'})
             row_count = len(df_main)
             worksheet.conditional_format(1, 5, row_count, 5, {
@@ -105,7 +111,7 @@ if uploaded_file1 and uploaded_file2:
         return output.getvalue()
 
     st.success("✅ Duomenys apdoroti ir paruošti eksportui!")
-    st.dataframe(df_grouped)
+    st.dataframe(df_grouped.drop(columns=["Logistika % (sk.)"]))
 
     st.download_button(
         label="📥 Atsisiųsti rezultatą (.xlsx)",
