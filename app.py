@@ -92,6 +92,16 @@ if uploaded_file1 and uploaded_file2:
             worksheet.set_column(col_map["Logistikos išlaidos"], col_map["Logistikos išlaidos"], 18, number_format)
             worksheet.set_column(col_map["Logistika %"], col_map["Logistika %"], 12, percent_format)
 
+            # Sąlyginis formatavimas: F stulpelis (index 5) su >5% paryškinimu
+            red_format = workbook.add_format({'font_color': 'red'})
+            row_count = len(df_main)
+            worksheet.conditional_format(1, 5, row_count, 5, {
+                'type': 'cell',
+                'criteria': '>',
+                'value': 0.05,
+                'format': red_format
+            })
+
         return output.getvalue()
 
     st.success("✅ Duomenys apdoroti ir paruošti eksportui!")
