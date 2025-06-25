@@ -22,7 +22,7 @@ if uploaded_file1 and uploaded_file2:
 
     df_merged = pd.merge(df1_subset, df2_subset, on="Kl.Siuntos Nr.", how="left")
 
-    df_final = df_merged[[
+    df_clean = df_merged[[
         "Kl.Siuntos Nr.",
         "Kaina, EUR su priemoka",
         "Gavėjas",
@@ -38,12 +38,12 @@ if uploaded_file1 and uploaded_file2:
         "Pardavimas Be PVM"
     ]
 
-    df_final = df_final.dropna(subset=required_cols)
-    df_final = df_final[
-        df_final[required_cols].applymap(lambda x: str(x).strip() != "").all(axis=1)
+    df_clean = df_clean.dropna(subset=required_cols)
+    df_clean = df_clean[
+        df_clean[required_cols].applymap(lambda x: str(x).strip() != "").all(axis=1)
     ]
 
-    # Grupavimas pagal siuntos numerį
+    # Grupavimas pagal Kl.Siuntos Nr.
     agg_funcs = {
         "Kaina, EUR su priemoka": "sum",
         "Gavėjas": "first",
@@ -51,7 +51,7 @@ if uploaded_file1 and uploaded_file2:
         "Pardavimas Be PVM": "first"
     }
 
-    df_grouped = df_final.groupby("Kl.Siuntos Nr.").agg(agg_funcs).reset_index()
+    df_grouped = df_clean.groupby("Kl.Siuntos Nr.").agg(agg_funcs).reset_index()
 
     # Suvestinė pagal menedžerį
     summary = df_grouped.groupby("Menedžeris").agg({
