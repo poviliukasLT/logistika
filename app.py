@@ -53,15 +53,12 @@ if uploaded_file1 and uploaded_file2:
 
     df_grouped = df_clean.groupby("Kl.Siuntos Nr.").agg(agg_funcs).reset_index()
 
-    # Logistika % skaitine forma (naudojama eksportui ir formatavimui)
-    df_grouped["Logistika % (sk.)"] = (
+    # Skaitinis logistikos % stulpelis (naudojamas Excel'e)
+    df_grouped["Logistika %"] = (
         df_grouped["Kaina, EUR su priemoka"] / df_grouped["Pardavimas Be PVM"]
     )
 
-    # Vizualiai rodome kaip tekstą su procentu Streamlit'e
-    df_grouped["Logistika %"] = df_grouped["Logistika % (sk.)"].map(lambda x: f"{x*100:.2f}%")
-
-    # Suvestinė pagal menedžerį
+    # Suvestinė pagal vadybininką
     summary = df_grouped.groupby("Menedžeris").agg({
         "Pardavimas Be PVM": "sum",
         "Kaina, EUR su priemoka": "sum"
@@ -79,11 +76,7 @@ if uploaded_file1 and uploaded_file2:
     def convert_df_with_summary(df_main, df_summary):
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            # Eksportui: tekstinį stulpelį pašaliname, paliekame skaitinį
-            df_export = df_main.drop(columns=["Logistika %"])
-            df_export = df_export.rename(columns={"Logistika % (sk.)": "Logistika %"})
-
-            df_export.to_excel(writer, index=False, sheet_name='Sujungti Duomenys', startrow=0)
+            df_main.to_excel(writer, index=False, sheet_name='Sujungti Duomenys', startrow=0)
             startcol = 8
             df_summary.to_excel(writer, index=False, sheet_name='Sujungti Duomenys', startcol=startcol, startrow=0)
 
@@ -95,13 +88,15 @@ if uploaded_file1 and uploaded_file2:
 
             col_map = {col: startcol + i for i, col in enumerate(df_summary.columns)}
 
+            # Formatavimas stulpeliams
+            worksheet.set_column(5, 5, 12, percent_format)  # Logistika % (F stulpelis)
             worksheet.set_column(col_map["Pardavimas Be PVM (suma)"], col_map["Pardavimas Be PVM (suma)"], 18, number_format)
             worksheet.set_column(col_map["Logistikos išlaidos"], col_map["Logistikos išlaidos"], 18, number_format)
             worksheet.set_column(col_map["Logistika %"], col_map["Logistika %"], 12, percent_format)
 
-            # Sąlyginis formatavimas: raudonas tekstas, jei > 5%
+            # Sąlyginis formatavimas: jei >5%, pažymėti raudonai
             red_format = workbook.add_format({'font_color': 'red'})
-            row_count = len(df_export)
+            row_count = len(df_main)
             worksheet.conditional_format(1, 5, row_count, 5, {
                 'type': 'cell',
                 'criteria': '>',
@@ -112,7 +107,6 @@ if uploaded_file1 and uploaded_file2:
         return output.getvalue()
 
     st.success("✅ Duomenys apdoroti ir paruošti eksportui!")
-    st.dataframe(df_grouped.drop(columns=["Logistika % (sk.)"]))
 
     st.download_button(
         label="📥 Atsisiųsti rezultatą (.xlsx)",
