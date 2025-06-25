@@ -53,7 +53,7 @@ if uploaded_file1 and uploaded_file2:
 
     df_grouped = df_clean.groupby("Kl.Siuntos Nr.").agg(agg_funcs).reset_index()
 
-    # Skaitinis logistikos % stulpelis (naudojamas Excel'e)
+    # Logistika % skaitine forma (naudojama Excel'e)
     df_grouped["Logistika %"] = (
         df_grouped["Kaina, EUR su priemoka"] / df_grouped["Pardavimas Be PVM"]
     )
@@ -86,15 +86,16 @@ if uploaded_file1 and uploaded_file2:
             percent_format = workbook.add_format({'num_format': '0.00%'})
             number_format = workbook.add_format({'num_format': '0.00'})
 
-            col_map = {col: startcol + i for i, col in enumerate(df_summary.columns)}
+            # Formatavimas F stulpeliui (indeksas 5 — Logistika %)
+            worksheet.set_column(5, 5, 12, percent_format)
 
-            # Formatavimas stulpeliams
-            worksheet.set_column(5, 5, 12, percent_format)  # Logistika % (F stulpelis)
+            # Formatavimas suvestinei
+            col_map = {col: startcol + i for i, col in enumerate(df_summary.columns)}
             worksheet.set_column(col_map["Pardavimas Be PVM (suma)"], col_map["Pardavimas Be PVM (suma)"], 18, number_format)
             worksheet.set_column(col_map["Logistikos išlaidos"], col_map["Logistikos išlaidos"], 18, number_format)
             worksheet.set_column(col_map["Logistika %"], col_map["Logistika %"], 12, percent_format)
 
-            # Sąlyginis formatavimas: jei >5%, pažymėti raudonai
+            # Sąlyginis formatavimas: jei > 5%, pažymėti raudonai
             red_format = workbook.add_format({'font_color': 'red'})
             row_count = len(df_main)
             worksheet.conditional_format(1, 5, row_count, 5, {
