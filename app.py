@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-st.title("Logistikos analizė")
+st.title("Logistikos analizė V2.2.1")
 
 uploaded_file1 = st.file_uploader("Įkelk VENIPAK .xlsx failą", type=["xlsx"])
 uploaded_file2 = st.file_uploader("Įkelk RIVILE .xlsx failą", type=["xlsx"])
