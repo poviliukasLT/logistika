@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-st.title("Logistikos analizė")
+st.title("Logistikos analizė V2.2")
 
 uploaded_file1 = st.file_uploader("Įkelk VENIPAK .xlsx failą", type=["xlsx"])
 uploaded_file2 = st.file_uploader("Įkelk RIVILE .xlsx failą", type=["xlsx"])
@@ -22,6 +22,10 @@ if uploaded_file1 and uploaded_file2:
 
     df_merged = pd.merge(df1_subset, df2_subset, on="Kl.Siuntos Nr.", how="left")
 
+    # Užpildome trūkstamus vadybininkus ir pardavimo sumą
+    df_merged["Menedžeris"] = df_merged["Menedžeris"].fillna("NEATPAŽINTAS")
+    df_merged["Pardavimas Be PVM"] = df_merged["Pardavimas Be PVM"].fillna(0)
+
     df_clean = df_merged[[
         "Kl.Siuntos Nr.",
         "Kaina, EUR su priemoka",
@@ -34,8 +38,7 @@ if uploaded_file1 and uploaded_file2:
         "Kl.Siuntos Nr.",
         "Kaina, EUR su priemoka",
         "Gavėjas",
-        "Menedžeris",
-        "Pardavimas Be PVM"
+        "Menedžeris"
     ]
 
     df_clean = df_clean.dropna(subset=required_cols)
@@ -53,12 +56,12 @@ if uploaded_file1 and uploaded_file2:
 
     df_grouped = df_clean.groupby("Kl.Siuntos Nr.").agg(agg_funcs).reset_index()
 
-    # Skaitinis logistikos % stulpelis (naudojamas Excel'e)
+    # Logistika % skaitine forma
     df_grouped["Logistika %"] = (
         df_grouped["Kaina, EUR su priemoka"] / df_grouped["Pardavimas Be PVM"]
     )
 
-    # Suvestinė pagal vadybininką
+    # Suvestinė pagal vadybininką (įskaitant NEATPAŽINTAS)
     summary = df_grouped.groupby("Menedžeris").agg({
         "Pardavimas Be PVM": "sum",
         "Kaina, EUR su priemoka": "sum"
@@ -86,8 +89,9 @@ if uploaded_file1 and uploaded_file2:
             percent_format = workbook.add_format({'num_format': '0.00%'})
             number_format = workbook.add_format({'num_format': '0.00'})
 
-            # Formatavimas F stulpeliui (indeksas 5 – Logistika %)
-            worksheet.set_column(5, 5, 12, percent_format)
+            # Formatavimas stulpeliams
+            worksheet.set_column(4, 4, 18, number_format)   # Pardavimas Be PVM
+            worksheet.set_column(5, 5, 12, percent_format)  # Logistika %
 
             # Formatavimas suvestinei
             col_map = {col: startcol + i for i, col in enumerate(df_summary.columns)}
@@ -95,14 +99,22 @@ if uploaded_file1 and uploaded_file2:
             worksheet.set_column(col_map["Logistikos išlaidos"], col_map["Logistikos išlaidos"], 18, number_format)
             worksheet.set_column(col_map["Logistika %"], col_map["Logistika %"], 12, percent_format)
 
-            # Sąlyginis formatavimas: jei >5%, pažymėti raudonai
-            red_format = workbook.add_format({'font_color': 'red'})
+            # Raudonai žymime: Logistika % > 5%
+            red_text = workbook.add_format({'font_color': 'red'})
             row_count = len(df_main)
             worksheet.conditional_format(1, 5, row_count, 5, {
                 'type': 'cell',
                 'criteria': '>',
                 'value': 0.05,
-                'format': red_format
+                'format': red_text
+            })
+
+            # Raudonai žymime: Pardavimas Be PVM == 0
+            worksheet.conditional_format(1, 4, row_count, 4, {
+                'type': 'cell',
+                'criteria': '==',
+                'value': 0,
+                'format': red_text
             })
 
         return output.getvalue()
