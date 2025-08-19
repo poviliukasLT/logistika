@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-st.title("Logistikos analizė V2.2")
+st.title("Logistikos analizė")
 
 uploaded_file1 = st.file_uploader("Įkelk VENIPAK .xlsx failą", type=["xlsx"])
 uploaded_file2 = st.file_uploader("Įkelk RIVILE .xlsx failą", type=["xlsx"])
@@ -89,9 +89,10 @@ if uploaded_file1 and uploaded_file2:
             percent_format = workbook.add_format({'num_format': '0.00%'})
             number_format = workbook.add_format({'num_format': '0.00'})
 
-            # Formatavimas stulpeliams
-            worksheet.set_column(4, 4, 18, number_format)   # Pardavimas Be PVM
-            worksheet.set_column(5, 5, 12, percent_format)  # Logistika %
+            # Formatavimas pagrindinei lentelei
+            worksheet.set_column(1, 1, 18, number_format)    # B – Kaina su priemoka
+            worksheet.set_column(4, 4, 18, number_format)    # E – Pardavimas Be PVM
+            worksheet.set_column(5, 5, 12, percent_format)   # F – Logistika %
 
             # Formatavimas suvestinei
             col_map = {col: startcol + i for i, col in enumerate(df_summary.columns)}
@@ -99,9 +100,11 @@ if uploaded_file1 and uploaded_file2:
             worksheet.set_column(col_map["Logistikos išlaidos"], col_map["Logistikos išlaidos"], 18, number_format)
             worksheet.set_column(col_map["Logistika %"], col_map["Logistika %"], 12, percent_format)
 
-            # Raudonai žymime: Logistika % > 5%
+            # Sąlyginiai formatavimai
             red_text = workbook.add_format({'font_color': 'red'})
             row_count = len(df_main)
+
+            # Logistika % > 5% (F stulpelis = 5)
             worksheet.conditional_format(1, 5, row_count, 5, {
                 'type': 'cell',
                 'criteria': '>',
@@ -109,7 +112,7 @@ if uploaded_file1 and uploaded_file2:
                 'format': red_text
             })
 
-            # Raudonai žymime: Pardavimas Be PVM == 0
+            # Pardavimas Be PVM == 0 (E stulpelis = 4)
             worksheet.conditional_format(1, 4, row_count, 4, {
                 'type': 'cell',
                 'criteria': '==',
